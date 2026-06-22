@@ -1,0 +1,6 @@
+{
+  "name": "程式碼調整與即時預覽工具",
+  "description": "具備 AI 溝通調整、程式碼拖曳載入、即時渲染預覽與完整版本歷程控制的程式碼輔助編輯器。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
