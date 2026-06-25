@@ -25,14 +25,16 @@ interface AIResult {
 
 // ─── Provider configs ─────────────────────────────────────────────────────────
 
-const PROVIDER_CONFIG: Record<Provider, { model: string; baseUrl?: string }> = {
+const PROVIDER_CONFIG: Record<Provider, { model: string; baseUrl?: string; noResponseFormat?: boolean }> = {
   gemini: {
     model: "gemini-3.1-flash-lite",
   },
   "nvidia-code": {
-    // Google Gemma 3 27B Instruct: efficient, high-quality instruction-following & code model
+    // Google Gemma 3 27B Instruct via NVIDIA NIM
+    // Does NOT support response_format:json_object — relies on system prompt JSON enforcement
     model: "google/gemma-3-27b-it",
     baseUrl: "https://integrate.api.nvidia.com/v1",
+    noResponseFormat: true,
   },
   nvidia: {
     // Llama-3.3-Nemotron-Super-49B: NAS-optimized, best speed/quality for code & reasoning
@@ -59,13 +61,19 @@ function buildSystemPrompt(title: string, prompt: string): string {
 3. 如果使用者只是單純發問、要求解釋、並不需要實際修改代碼，請在 explanation 中提供詳盡解答，並於 modifiedCode 中原封不動地帶回當前的 currentCode，且將 changed 標為 false。
 4. 若有修改代碼，changed 必須為 true，且 modifiedCode 為修改後的完整新代碼。
 
-請嚴格以此 JSON 格式回覆（不要任何 markdown 包裹，直接是 JSON 字串）：
-{
-  "explanation": "詳盡的繁體中文說明",
-  "modifiedCode": "完整程式碼純文字",
-  "changed": true 或 false,
-  "language": "html | css | javascript | typescript | tsx | json | markdown | ..."
-}`;
+【重要輸出規則】你的回覆必須是且僅是一個合法的 JSON 物件，絕對不可以：
+- 在 JSON 前後加任何文字說明
+- 使用 \`\`\`json 或任何 markdown 包裹
+- 輸出多個 JSON 或陣列
+
+請嚴格遵守以下格式（直接輸出 JSON，不含任何其他字符）：
+{"explanation":"詳盡的繁體中文說明","modifiedCode":"完整程式碼純文字","changed":true,"language":"html"}
+
+欄位說明：
+- explanation: string，繁體中文說明
+- modifiedCode: string，完整程式碼（未修改時原樣回傳）
+- changed: boolean，true = 有修改代碼，false = 未修改
+- language: string，如 html / css / javascript / typescript / tsx / json`;
 }
 
 function buildContextPrompt(title: string, currentCode: string, prompt: string): string {
@@ -151,19 +159,23 @@ async function callOpenAICompat(body: RequestBody, provider: Exclude<Provider, "
     { role: "user", content: contextPrompt },
   ];
 
+  // Build request body
+  // Gemma on NIM does not support response_format:json_object — skip it and rely on system prompt
+  const requestBody: Record<string, unknown> = {
+    model: cfg.model,
+    messages,
+    temperature: 0.6,
+    max_tokens: 4096,
+    ...(cfg.noResponseFormat ? {} : { response_format: { type: "json_object" } }),
+  };
+
   const response = await fetch(`${cfg.baseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${key}`,
     },
-    body: JSON.stringify({
-      model: cfg.model,
-      messages,
-      temperature: 0.6,
-      max_tokens: 4096,
-      response_format: { type: "json_object" },
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
