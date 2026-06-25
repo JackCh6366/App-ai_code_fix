@@ -30,8 +30,8 @@ const PROVIDER_CONFIG: Record<Provider, { model: string; baseUrl?: string }> = {
     model: "gemini-3.1-flash-lite",
   },
   "nvidia-code": {
-    // NVIDIA Nemotron Ultra 550B: frontier-scale reasoning & agentic code model
-    model: "nvidia/nemotron-3-ultra-550b-a55b",
+    // Google Gemma 3 27B Instruct: efficient, high-quality instruction-following & code model
+    model: "google/gemma-3-27b-it",
     baseUrl: "https://integrate.api.nvidia.com/v1",
   },
   nvidia: {
