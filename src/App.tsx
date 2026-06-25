@@ -29,6 +29,16 @@ import { ChatMessage, Version } from "./types";
 import LivePreview from "./components/LivePreview";
 import DiffView from "./components/DiffView";
 
+// ─── AI Provider 設定 ────────────────────────────────────────────────────────
+type AIProvider = "gemini" | "nvidia-code" | "nvidia" | "meta";
+
+const AI_PROVIDERS: { value: AIProvider; label: string; model: string; color: string; badge: string }[] = [
+  { value: "gemini",      label: "Google Gemini",      model: "gemini-3.1-flash-lite",           color: "#4285F4", badge: "bg-blue-900/60 text-blue-300 border-blue-800" },
+  { value: "nvidia-code", label: "NVIDIA Nemotron Ultra", model: "nemotron-3-ultra-550b",         color: "#76B900", badge: "bg-green-900/60 text-green-300 border-green-800" },
+  { value: "nvidia",      label: "Nemotron Super 49B",  model: "llama-3.3-nemotron-super-49b",   color: "#84cc16", badge: "bg-lime-900/60 text-lime-300 border-lime-800" },
+  { value: "meta",        label: "Meta Llama 3.3",     model: "llama-3.3-70b-instruct",         color: "#0668E1", badge: "bg-indigo-900/60 text-indigo-300 border-indigo-800" },
+];
+
 export default function App() {
   // 核心代碼狀態
   const [currentCode, setCurrentCode] = useState<string>(PRESET_FILES[0].code);
@@ -42,13 +52,14 @@ export default function App() {
 
   // AI 溝通狀態
   const [prompt, setPrompt] = useState("");
+  const [selectedProvider, setSelectedProvider] = useState<AIProvider>("gemini");
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([
     {
       id: "welcome",
       role: "model",
       content: `您好！我是您的 AI 前端程式碼助手。您可以：
 1. 在左側挑選內建的精美程式範本，或**拖入您的代碼檔案**。
-2. 在此處輸入調整需求（例如：「*將時鐘背景改為亮麗的霓虹流光、增加時分秒的邊框發光*」）。
+2. 在下方選擇 AI 服務（Gemini / NVIDIA / Meta），再輸入調整需求。
 3. 觀察右方的**「即時預覽」**或進行**「Diff 版本比對」**。`,
       timestamp: new Date()
     }
@@ -216,10 +227,11 @@ export default function App() {
           content: msg.content
         }));
 
-      const res = await fetch("/api/gemini/modify", {
+      const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          provider: selectedProvider,
           title: fileName,
           currentCode: currentCode,
           prompt: finalPrompt,
@@ -313,10 +325,10 @@ export default function App() {
   ];
 
   return (
-    <div id="bento-container" className="flex flex-col h-screen w-full bg-[#07070a] text-neutral-300 font-sans p-3 gap-3 overflow-hidden select-none">
+    <div id="bento-container" className="flex flex-col min-h-screen w-full bg-[#07070a] text-neutral-300 font-sans p-2 md:p-3 gap-2 md:gap-3 overflow-x-hidden select-none">
       
       {/* 頂部導覽 Header Section */}
-      <header id="bento-header" className="flex items-center justify-between px-5 py-2.5 bg-[#0f1019] border border-neutral-800 rounded-xl shadow-lg">
+      <header id="bento-header" className="flex flex-wrap items-center justify-between gap-2 px-3 md:px-5 py-2.5 bg-[#0f1019] border border-neutral-800 rounded-xl shadow-lg">
         <div className="flex items-center gap-4">
           <div className="w-9 h-9 bg-gradient-to-tr from-[#6366f1] to-[#10b981] rounded-lg flex items-center justify-center shadow-md">
             <Sparkles className="text-white w-5 h-5 animate-pulse" />
@@ -402,8 +414,8 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Bento Grid */}
-      <main id="bento-main" className="grid grid-cols-12 grid-rows-12 gap-3 flex-grow h-0 pb-1">
+      {/* Main Bento Grid - RWD: mobile=stack, md=2col, lg=3-panel bento */}
+      <main id="bento-main" className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-3 flex-grow lg:h-0 pb-1">
         
         {/* Bento Cell 1: 檔案與拖曳區 (左下側) - span 3, row-span 12 */}
         <aside
@@ -411,7 +423,7 @@ export default function App() {
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`col-span-3 row-span-12 bg-[#0f1019] border rounded-2xl p-4 flex flex-col gap-4 transition-all duration-300 ${
+          className={`md:col-span-3 md:row-span-12 bg-[#0f1019] border rounded-2xl p-4 flex flex-col gap-4 transition-all duration-300 ${
             dragOver ? "border-indigo-500 bg-indigo-950/20 shadow-[0_0_20px_rgba(99,102,241,0.2)]" : "border-neutral-800"
           }`}
         >
@@ -479,8 +491,8 @@ export default function App() {
           </div>
         </aside>
 
-        {/* Bento Cell 2: 程式碼編輯器 (中側) - span 5, row-span 8 */}
-        <section id="bento-editor" className="col-span-5 row-span-8 bg-[#0f1019] border border-neutral-800 rounded-2xl relative overflow-hidden flex flex-col">
+        {/* Bento Cell 2: 程式碼編輯器 */}
+        <section id="bento-editor" className="md:col-span-5 md:row-span-8 min-h-[320px] lg:min-h-0 bg-[#0f1019] border border-neutral-800 rounded-2xl relative overflow-hidden flex flex-col">
           {/* 編輯器分頁標頭 */}
           <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-800 bg-[#0c0d14]">
             <div className="flex items-center gap-1 bg-[#171825] p-1 rounded-lg">
@@ -554,13 +566,13 @@ export default function App() {
           </div>
         </section>
 
-        {/* Bento Cell 3: 即時預覽舞台 (右上側) - span 4, row-span 6 */}
-        <section id="bento-preview" className="col-span-4 row-span-6 bg-[#0f1019] border border-neutral-800 rounded-2xl overflow-hidden flex flex-col">
+        {/* Bento Cell 3: 即時預覽舞台 */}
+        <section id="bento-preview" className="md:col-span-4 md:row-span-6 min-h-[280px] lg:min-h-0 bg-[#0f1019] border border-neutral-800 rounded-2xl overflow-hidden flex flex-col">
           <LivePreview code={currentCode} language={language} />
         </section>
 
-        {/* Bento Cell 4: 歷程 Timeline 與版本控制 (右下側) - span 4, row-span 6 */}
-        <section id="bento-timeline" className="col-span-4 row-span-6 bg-[#0f1019] border border-neutral-800 rounded-2xl p-4 flex flex-col gap-3 overflow-hidden">
+        {/* Bento Cell 4: 歷程 Timeline 與版本控制 */}
+        <section id="bento-timeline" className="md:col-span-4 md:row-span-6 min-h-[200px] lg:min-h-0 bg-[#0f1019] border border-neutral-800 rounded-2xl p-4 flex flex-col gap-3 overflow-hidden">
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">
               <History className="w-3.5 h-3.5 text-emerald-400" />
@@ -647,8 +659,8 @@ export default function App() {
           </div>
         </section>
 
-        {/* Bento Cell 5: AI 對話與代碼修正控制 (中下側) - span 5, row-span 4 */}
-        <section id="bento-ai-chat" className="col-span-5 row-span-4 bg-gradient-to-br from-[#0f1019] to-[#0a0a10] border border-neutral-800 rounded-2xl flex flex-col p-4 shadow-inner overflow-hidden">
+        {/* Bento Cell 5: AI 對話與代碼修正控制 */}
+        <section id="bento-ai-chat" className="md:col-span-5 md:row-span-4 min-h-[300px] lg:min-h-0 bg-gradient-to-br from-[#0f1019] to-[#0a0a10] border border-neutral-800 rounded-2xl flex flex-col p-4 shadow-inner overflow-visible">
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-1.5">
               <span className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1">
@@ -657,7 +669,25 @@ export default function App() {
               </span>
             </div>
             <div className="h-[1px] flex-grow bg-indigo-500/10 mx-3"></div>
-            <span className="text-[10px] text-neutral-500">搭載 Gemini 3.5 可自動理解與修改程式碼</span>
+
+            {/* AI 服務選擇 - 使用原生 select 避免 overflow-hidden 裁切問題 */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9px] text-neutral-500 font-semibold shrink-0 hidden sm:block">模型：</span>
+              <select
+                id="provider-select"
+                value={selectedProvider}
+                onChange={(e) => setSelectedProvider(e.target.value as AIProvider)}
+                className={`text-[10px] font-bold border rounded-lg px-2 py-1 cursor-pointer outline-none transition-all ${
+                  AI_PROVIDERS.find(p => p.value === selectedProvider)?.badge || ""
+                } bg-[#121320]`}
+              >
+                {AI_PROVIDERS.map((p) => (
+                  <option key={p.value} value={p.value} className="bg-[#121320] text-neutral-200 font-normal">
+                    {p.label} ({p.model})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* AI 對話框對答區 */}
@@ -780,13 +810,15 @@ export default function App() {
 
         <div className="ml-auto flex items-center gap-5">
           <div className="flex items-center gap-1 text-neutral-600">
-            <span>引擎：</span>
-            <span className="text-neutral-500">Gemini 3.5 Flash</span>
+            <span>AI 引擎：</span>
+            <span className={`font-semibold ${ AI_PROVIDERS.find(p => p.value === selectedProvider)?.badge.split(" ")[1] || "text-neutral-500" }`}>
+              {AI_PROVIDERS.find(p => p.value === selectedProvider)?.label}
+            </span>
           </div>
           <div className="border-l border-neutral-800 h-2.5"></div>
           <div>React 19.x</div>
           <div>Vite 6.x</div>
-          <div>Express Full-Stack</div>
+          <div>Serverless API</div>
         </div>
       </footer>
     </div>
