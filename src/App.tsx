@@ -240,7 +240,12 @@ export default function App() {
       });
 
       if (!res.ok) {
-        throw new Error(`伺服器連線失敗。狀態碼：${res.status}`);
+        let errMsg = `伺服器錯誤 (${res.status})`;
+        try {
+          const errData = await res.json();
+          errMsg = errData.error || errMsg;
+        } catch (_) {}
+        throw new Error(errMsg);
       }
 
       const data = await res.json();
