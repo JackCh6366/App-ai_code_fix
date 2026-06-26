@@ -141,8 +141,8 @@ app.post("/api/analyze", async (req, res) => {
         model,
         messages,
         temperature: 0.3,
-        max_tokens: provider === "meta" ? 1500 : 1200,
-        response_format: { type: "json_object" },
+        max_tokens: provider === "meta" ? 2048 : 1500,
+        stream: true,
       }),
     });
 
@@ -151,10 +151,40 @@ app.post("/api/analyze", async (req, res) => {
       throw new Error(`${provider} API 錯誤 (${nimRes.status}): ${errText}`);
     }
 
-    const nimData: any = await nimRes.json();
-    const nimText: string = nimData?.choices?.[0]?.message?.content;
-    if (!nimText) throw new Error(`${provider} 回應為空`);
-    res.json(parseJSONSafe(nimText));
+    // ── SSE Streaming：邊接收邊累積，突破 Vercel 10 秒限制 ──
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+
+    let fullText = "";
+    const reader = nimRes.body!.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
+      for (const line of lines) {
+        const data = line.slice(6).trim();
+        if (data === "[DONE]") continue;
+        try {
+          const parsed = JSON.parse(data);
+          const delta = parsed?.choices?.[0]?.delta?.content || "";
+          fullText += delta;
+          // 即時把累積進度推給前端（讓連線保持活躍）
+          res.write(`data: ${JSON.stringify({ partial: delta })}\n\n`);
+        } catch (_) {}
+      }
+    }
+
+    if (!fullText) throw new Error(`${provider} 回應為空`);
+
+    // 串流結束，送出完整解析結果
+    const finalResult = parseJSONSafe(fullText);
+    res.write(`data: ${JSON.stringify({ done: true, ...finalResult })}\n\n`);
+    res.end();
 
   } catch (error: any) {
     console.error("[/api/analyze] error:", error);
