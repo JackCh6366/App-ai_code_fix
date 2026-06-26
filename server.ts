@@ -143,7 +143,7 @@ app.post("/api/analyze", async (req, res) => {
         model,
         messages,
         temperature: 0.6,
-        max_tokens: 16384,
+        max_tokens: 4096,
         response_format: { type: "json_object" },
       }),
     });

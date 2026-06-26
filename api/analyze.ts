@@ -25,7 +25,7 @@ interface AIResult {
 
 // ─── Provider configs ─────────────────────────────────────────────────────────
 
-const NVIDIA_MAX_TOKENS = 16384;
+const NVIDIA_MAX_TOKENS = 4096;
 
 const PROVIDER_CONFIG: Record<Provider, { model: string; baseUrl?: string; noResponseFormat?: boolean }> = {
   gemini: {
@@ -270,7 +270,7 @@ export default async function handler(req: any, res: any) {
       result = await callGemini(body);
     } else {
       // NVIDIA NIM 偶爾 504，自動重試最多 3 次，間隔 2s / 4s
-      result = await withRetry(() => callOpenAICompat(body, provider), 3, 2000);
+      result = await withRetry(() => callOpenAICompat(body, provider), 1, 2000);
     }
 
     return res.status(200).json(result);
