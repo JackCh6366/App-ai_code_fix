@@ -176,56 +176,21 @@ export default function App() {
         throw new Error(errMsg);
       }
 
-      const contentType = res.headers.get("content-type") || "";
-
-      if (contentType.includes("text/event-stream")) {
-        // ── SSE 串流模式（Meta / NVIDIA）──
-        const reader = res.body!.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) continue;
-            const raw = line.slice(6).trim();
-            try {
-              const evt = JSON.parse(raw);
-              if (evt.done) {
-                // 最終完整結果
-                const aiMsg: ChatMessage = { id: `ai-${Date.now()}`, role: "model", content: evt.explanation || "修改完成！", timestamp: new Date(), explanation: evt.explanation, changedCode: evt.changed ? evt.modifiedCode : undefined };
-                setChatHistory(prev => [...prev, aiMsg]);
-                if (evt.changed && evt.modifiedCode) {
-                  const nextVerId = `v-ai-${Date.now()}`;
-                  setVersions(prev => [{ id: nextVerId, timestamp: new Date(), title: `AI：${finalPrompt.slice(0, 16)}${finalPrompt.length > 16 ? "..." : ""}`, code: evt.modifiedCode, note: `由 AI 調整：${finalPrompt}`, language: evt.language || language }, ...prev]);
-                  setSelectedVersionId(nextVerId);
-                  setCurrentCode(evt.modifiedCode);
-                  if (evt.language) setLanguage(evt.language);
-                }
-              }
-            } catch (_) {}
-          }
-        }
-      } else {
-        // ── 一般 JSON 模式（Gemini）──
-        const data = await res.json();
-        const aiMsg: ChatMessage = { id: `ai-${Date.now()}`, role: "model", content: data.explanation || "修改完成！", timestamp: new Date(), explanation: data.explanation, changedCode: data.changed ? data.modifiedCode : undefined };
-        setChatHistory(prev => [...prev, aiMsg]);
-        if (data.changed && data.modifiedCode) {
-          const nextVerId = `v-ai-${Date.now()}`;
-          setVersions(prev => [{ id: nextVerId, timestamp: new Date(), title: `AI：${finalPrompt.slice(0, 16)}${finalPrompt.length > 16 ? "..." : ""}`, code: data.modifiedCode, note: `由 AI 調整：${finalPrompt}`, language: data.language || language }, ...prev]);
-          setSelectedVersionId(nextVerId);
-          setCurrentCode(data.modifiedCode);
-          if (data.language) setLanguage(data.language);
-        }
+      // ── 統一 JSON 模式（Gemini / Meta 均適用）──
+      const data = await res.json();
+      const aiMsg: ChatMessage = { id: `ai-${Date.now()}`, role: "model", content: data.explanation || "修改完成！", timestamp: new Date(), explanation: data.explanation, changedCode: data.changed ? data.modifiedCode : undefined };
+      setChatHistory(prev => [...prev, aiMsg]);
+      if (data.changed && data.modifiedCode) {
+        const nextVerId = `v-ai-${Date.now()}`;
+        setVersions(prev => [{ id: nextVerId, timestamp: new Date(), title: `AI：${finalPrompt.slice(0, 16)}${finalPrompt.length > 16 ? "..." : ""}`, code: data.modifiedCode, note: `由 AI 調整：${finalPrompt}`, language: data.language || language }, ...prev]);
+        setSelectedVersionId(nextVerId);
+        setCurrentCode(data.modifiedCode);
+        if (data.language) setLanguage(data.language);
       }
     } catch (err: any) {
       const apiKey = selectedProvider === "gemini" ? "GEMINI_API_KEY" : "NVIDIA_API_KEY";
       const msg = err.message?.includes("504") || err.message?.includes("timeout")
-        ? "請求超時，請簡化需求後再試。"
+        ? `${selectedProvider === "meta" ? "Meta Llama 回應較慢，請縮短程式碼或簡化需求後再試。" : "請求超時，請稍後再試。"}`
         : `發生錯誤：${err.message}。請確認 ${apiKey} 已設定且網路正常。`;
       setChatHistory(prev => [...prev, { id: `err-${Date.now()}`, role: "system", content: msg, timestamp: new Date() }]);
     } finally {
