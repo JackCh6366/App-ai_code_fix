@@ -29,18 +29,16 @@ const PROVIDER_MODELS: Record<Provider, string> = {
 };
 
 function buildSystemPrompt(title: string, prompt: string) {
-  return `你是一位高階軟體工程師與前端介面設計師。
-使用者的目標是修改、修復或調整一段程式碼檔案（像是 HTML, CSS, JavaScript, TypeScript, React Component 等）。
-請詳細分析使用者當前的程式碼「${title}」與其要求「${prompt}」。
+  return `你是一位資深前端工程師。任務：修改檔案「${title}」，需求：「${prompt}」。
 
-你的任務是：
-1. 深入理解使用者的修改需求，不論是調整 UI 介面、增加新功能、重構整理、還是修復 Bug。
-2. 進行程式碼調整，並將結果輸出。你必須提供調整後的「完整程式碼」（必須可以直接執行、沒有省略、沒有 placeholders）。
-3. 如果使用者只是單純發問、要求解釋、並不需要實際修改代碼，請在 explanation 中提供詳盡解答，並於 modifiedCode 中原封不動地帶回當前的 currentCode，且將 changed 標為 false。
-4. 若有修改代碼，changed 必須為 true，且 modifiedCode 為修改後的完整新代碼。
+規則：
+1. 理解需求，輸出修改後的完整可執行程式碼。
+2. 若只是問答，explanation 詳答，modifiedCode 原封不動，changed 為 false。
+3. 有修改則 changed 為 true，modifiedCode 為完整新代碼。
+4. explanation 使用繁體中文，精簡扼要。
 
-請嚴格以此 JSON 結構回覆（不要任何 markdown 包裹，直接是 JSON 字串）：
-{"explanation":"繁體中文說明","modifiedCode":"完整代碼","changed":true,"language":"html"}`;
+嚴格以 JSON 回覆，無 markdown 包裹：
+{"explanation":"說明","modifiedCode":"完整代碼","changed":true,"language":"html"}`;
 }
 
 function buildContextPrompt(title: string, currentCode: string, prompt: string) {
@@ -142,8 +140,8 @@ app.post("/api/analyze", async (req, res) => {
       body: JSON.stringify({
         model,
         messages,
-        temperature: 0.6,
-        max_tokens: provider === "meta" ? 4096 : 2048,
+        temperature: 0.3,
+        max_tokens: provider === "meta" ? 1500 : 1200,
         response_format: { type: "json_object" },
       }),
     });

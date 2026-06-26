@@ -169,7 +169,9 @@ export default function App() {
         body: JSON.stringify({ provider: selectedProvider, title: fileName, currentCode, prompt: finalPrompt, history: formattedHistory }),
       });
       if (!res.ok) {
-        let errMsg = `伺服器錯誤 (${res.status})`;
+        let errMsg = res.status === 504
+          ? "請求超時，請稍後再試（Vercel 10 秒限制）"
+          : `伺服器錯誤 (${res.status})`;
         try { const errData = await res.json(); errMsg = errData.error || errMsg; } catch (_) {}
         throw new Error(errMsg);
       }
@@ -184,8 +186,10 @@ export default function App() {
         if (data.language) setLanguage(data.language);
       }
     } catch (err: any) {
-      const apiKeyHint = getApiKeyName(selectedProvider);
-      setChatHistory(prev => [...prev, { id: `err-${Date.now()}`, role: "system", content: `錯誤：${err.message}。請確認 ${apiKeyHint} 已設定。`, timestamp: new Date() }]);
+      const msg = err.message?.includes("504") || err.message?.includes("timeout")
+        ? "請求超時，請簡化需求或稍後再試。"
+        : `發生錯誤：${err.message}。請確認 GEMINI_API_KEY 已設定且網路正常。`;
+      setChatHistory(prev => [...prev, { id: `err-${Date.now()}`, role: "system", content: msg, timestamp: new Date() }]);
     } finally {
       setIsLoading(false);
     }
