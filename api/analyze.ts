@@ -30,10 +30,9 @@ const PROVIDER_CONFIG: Record<Provider, { model: string; baseUrl?: string; noRes
     model: "gemini-3.1-flash-lite",
   },
   "nvidia-code": {
-    // Google Gemma 4 31B IT via NVIDIA NIM
+    // Google Gemma 3 27B IT via NVIDIA NIM (stable hosted API)
     // Does NOT support response_format:json_object — relies on system prompt JSON enforcement
-    // Note: This model is occasionally unavailable on NVIDIA hosted API (504 timeout is a known issue)
-    model: "google/gemma-4-31b-it",
+    model: "google/gemma-3-27b-it",
     baseUrl: "https://integrate.api.nvidia.com/v1",
     noResponseFormat: true,
   },
