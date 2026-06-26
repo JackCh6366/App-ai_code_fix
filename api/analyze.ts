@@ -6,7 +6,7 @@ export const config = {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Provider = "gemini" | "nvidia-code" | "nvidia" | "meta";
+type Provider = "gemini" | "meta";
 
 interface RequestBody {
   provider: Provider;
@@ -25,23 +25,9 @@ interface AIResult {
 
 // ─── Provider configs ─────────────────────────────────────────────────────────
 
-const DEFAULT_NVIDIA_MAX_TOKENS = 4096;
-
 const PROVIDER_CONFIG: Record<Provider, { model: string; baseUrl?: string; maxTokens?: number; noResponseFormat?: boolean }> = {
   gemini: {
     model: "gemini-3.1-flash-lite",
-  },
-  "nvidia-code": {
-    // NVIDIA Nemotron 3 Nano 30B: fast non-China replacement for the retired Gemma 27B slot.
-    model: "nvidia/nemotron-3-nano-30b-a3b",
-    baseUrl: "https://integrate.api.nvidia.com/v1",
-    maxTokens: 2048,
-  },
-  nvidia: {
-    // Mistral Small 4: non-China coding/reasoning model that responds reliably in Vercel.
-    model: "mistralai/mistral-small-4-119b-2603",
-    baseUrl: "https://integrate.api.nvidia.com/v1",
-    maxTokens: 2048,
   },
   meta: {
     // Meta Llama 3.3 70B Instruct: strong general-purpose code & instruction model
@@ -219,7 +205,7 @@ async function callOpenAICompat(body: RequestBody, provider: Exclude<Provider, "
     model: cfg.model,
     messages,
     temperature: 0.6,
-    max_tokens: cfg.maxTokens ?? DEFAULT_NVIDIA_MAX_TOKENS,
+    max_tokens: cfg.maxTokens ?? 4096,
     ...(cfg.noResponseFormat ? {} : { response_format: { type: "json_object" } }),
   };
 
@@ -259,7 +245,7 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: "prompt 為必填內容" });
   }
 
-  const validProviders: Provider[] = ["gemini", "nvidia-code", "nvidia", "meta"];
+  const validProviders: Provider[] = ["gemini", "meta"];
   if (!validProviders.includes(provider)) {
     return res.status(400).json({ error: `無效的 provider：${provider}` });
   }
