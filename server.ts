@@ -20,10 +20,10 @@ type Provider = "gemini" | "nvidia-code" | "nvidia" | "meta";
 
 const PROVIDER_MODELS: Record<Provider, string> = {
   gemini: "gemini-3.1-flash-lite",
-  // Google Gemma 4 31B IT via NVIDIA NIM.
-  "nvidia-code": "google/gemma-4-31b-it",
-  // Llama-3.3-Nemotron-Super-49B v1.5: newer stable endpoint.
-  nvidia: "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+  // NVIDIA Nemotron 3 Nano 30B: fast non-China replacement for the retired Gemma 27B slot.
+  "nvidia-code": "nvidia/nemotron-3-nano-30b-a3b",
+  // Mistral Small 4: non-China coding/reasoning model that responds reliably in Vercel.
+  nvidia: "mistralai/mistral-small-4-119b-2603",
   // Meta Llama 3.3 70B: strong general-purpose code & instruction model
   meta: "meta/llama-3.3-70b-instruct",
 };
@@ -143,7 +143,7 @@ app.post("/api/analyze", async (req, res) => {
         model,
         messages,
         temperature: 0.6,
-        max_tokens: 4096,
+        max_tokens: provider === "meta" ? 4096 : 2048,
         response_format: { type: "json_object" },
       }),
     });

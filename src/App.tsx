@@ -34,8 +34,8 @@ type AIProvider = "gemini" | "nvidia-code" | "nvidia" | "meta";
 
 const AI_PROVIDERS: { value: AIProvider; label: string; model: string; color: string; badge: string }[] = [
   { value: "gemini",      label: "Google Gemini",      model: "gemini-3.1-flash-lite",           color: "#4285F4", badge: "bg-blue-900/60 text-blue-300 border-blue-800" },
-  { value: "nvidia-code", label: "Google Gemma 4 31B",    model: "gemma-4-31b-it",              color: "#4285F4", badge: "bg-sky-900/60 text-sky-300 border-sky-800" },
-  { value: "nvidia",      label: "Nemotron Super 49B",  model: "llama-3.3-nemotron-super-49b-v1.5", color: "#84cc16", badge: "bg-lime-900/60 text-lime-300 border-lime-800" },
+  { value: "nvidia-code", label: "NVIDIA Nemotron 3 Nano", model: "nemotron-3-nano-30b-a3b",      color: "#84cc16", badge: "bg-lime-900/60 text-lime-300 border-lime-800" },
+  { value: "nvidia",      label: "Mistral Small 4",     model: "mistral-small-4-119b-2603",       color: "#ff7000", badge: "bg-orange-900/60 text-orange-300 border-orange-800" },
   { value: "meta",        label: "Meta Llama 3.3",     model: "llama-3.3-70b-instruct",         color: "#0668E1", badge: "bg-indigo-900/60 text-indigo-300 border-indigo-800" },
 ];
 

@@ -25,21 +25,23 @@ interface AIResult {
 
 // ─── Provider configs ─────────────────────────────────────────────────────────
 
-const NVIDIA_MAX_TOKENS = 4096;
+const DEFAULT_NVIDIA_MAX_TOKENS = 4096;
 
-const PROVIDER_CONFIG: Record<Provider, { model: string; baseUrl?: string; noResponseFormat?: boolean }> = {
+const PROVIDER_CONFIG: Record<Provider, { model: string; baseUrl?: string; maxTokens?: number; noResponseFormat?: boolean }> = {
   gemini: {
     model: "gemini-3.1-flash-lite",
   },
   "nvidia-code": {
-    // Google Gemma 4 31B IT via NVIDIA NIM.
-    model: "google/gemma-4-31b-it",
+    // NVIDIA Nemotron 3 Nano 30B: fast non-China replacement for the retired Gemma 27B slot.
+    model: "nvidia/nemotron-3-nano-30b-a3b",
     baseUrl: "https://integrate.api.nvidia.com/v1",
+    maxTokens: 2048,
   },
   nvidia: {
-    // Llama-3.3-Nemotron-Super-49B v1.5: newer stable endpoint.
-    model: "nvidia/llama-3.3-nemotron-super-49b-v1.5",
+    // Mistral Small 4: non-China coding/reasoning model that responds reliably in Vercel.
+    model: "mistralai/mistral-small-4-119b-2603",
     baseUrl: "https://integrate.api.nvidia.com/v1",
+    maxTokens: 2048,
   },
   meta: {
     // Meta Llama 3.3 70B Instruct: strong general-purpose code & instruction model
@@ -131,9 +133,9 @@ function friendlyError(provider: Provider, err: any): string {
   if (msg.includes("504")) {
     const modelName =
       provider === "nvidia-code"
-        ? "Gemma 4 31B"
+        ? "NVIDIA Nemotron 3 Nano"
         : provider === "nvidia"
-        ? "Nemotron Super 49B"
+        ? "Mistral Small 4"
         : provider === "meta"
         ? "Meta Llama 3.3"
         : provider;
@@ -217,7 +219,7 @@ async function callOpenAICompat(body: RequestBody, provider: Exclude<Provider, "
     model: cfg.model,
     messages,
     temperature: 0.6,
-    max_tokens: NVIDIA_MAX_TOKENS,
+    max_tokens: cfg.maxTokens ?? DEFAULT_NVIDIA_MAX_TOKENS,
     ...(cfg.noResponseFormat ? {} : { response_format: { type: "json_object" } }),
   };
 
