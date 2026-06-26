@@ -218,7 +218,7 @@ export default function App() {
   const currentProviderLabel = AI_PROVIDERS.find(p => p.value === selectedProvider)?.label ?? "AI";
 
   // ─── 共用元件：AI 對話區 ───────────────────────────────────────────────
-  const ChatPanel = () => (
+  const chatPanelJSX = (
     <div className="flex flex-col h-full">
       {/* 對話標題列 */}
       <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-neutral-800 bg-[#0c0d14] shrink-0">
@@ -308,7 +308,7 @@ export default function App() {
   );
 
   // ─── 共用元件：版本歷史區 ─────────────────────────────────────────────
-  const HistoryPanel = () => (
+  const historyPanelJSX = (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-800 bg-[#0c0d14] shrink-0">
         <div className="text-[11px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">
@@ -358,7 +358,7 @@ export default function App() {
   );
 
   // ─── 共用元件：程式碼編輯器 ──────────────────────────────────────────
-  const EditorPanel = () => (
+  const editorPanelJSX = (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-800 bg-[#0c0d14] shrink-0 gap-2">
         <div className="flex items-center gap-1 bg-[#171825] p-1 rounded-lg">
@@ -418,7 +418,7 @@ export default function App() {
   );
 
   // ─── 側欄抽屜（手機用） ───────────────────────────────────────────────
-  const Sidebar = () => (
+  const sidebarJSX = (
     <>
       {/* 遮罩 */}
       {showSidebar && (
@@ -491,7 +491,7 @@ export default function App() {
     <div className="flex flex-col h-screen w-full bg-[#07070a] text-neutral-300 font-sans overflow-hidden select-none">
 
       {/* ── 手機側欄抽屜 ── */}
-      <Sidebar />
+      {sidebarJSX}
 
       {/* ── Header ── */}
       <header className="flex items-center justify-between gap-2 px-3 md:px-5 py-2.5 bg-[#0f1019] border-b border-neutral-800 shrink-0 z-30">
@@ -619,11 +619,11 @@ export default function App() {
           <div className="flex-1 flex flex-col gap-2 min-h-0">
             {/* 編輯器 */}
             <div className="flex-[5] bg-[#0f1019] border border-neutral-800 rounded-2xl overflow-hidden flex flex-col min-h-0">
-              <EditorPanel />
+              {editorPanelJSX}
             </div>
             {/* AI 對話 */}
             <div className="flex-[4] bg-gradient-to-br from-[#0f1019] to-[#0a0a10] border border-neutral-800 rounded-2xl overflow-hidden flex flex-col min-h-0">
-              <ChatPanel />
+              {chatPanelJSX}
             </div>
           </div>
 
@@ -633,7 +633,7 @@ export default function App() {
               <LivePreview code={currentCode} language={language} />
             </div>
             <div className="flex-[4] bg-[#0f1019] border border-neutral-800 rounded-2xl overflow-hidden flex flex-col min-h-0">
-              <HistoryPanel />
+              {historyPanelJSX}
             </div>
           </div>
         </div>
@@ -643,10 +643,10 @@ export default function App() {
           {/* 左：編輯器 */}
           <div className="flex-1 flex flex-col gap-2 min-h-0">
             <div className="flex-[6] bg-[#0f1019] border border-neutral-800 rounded-2xl overflow-hidden flex flex-col min-h-0">
-              <EditorPanel />
+              {editorPanelJSX}
             </div>
             <div className="flex-[4] bg-[#0f1019] border border-neutral-800 rounded-2xl overflow-hidden flex flex-col min-h-0">
-              <HistoryPanel />
+              {historyPanelJSX}
             </div>
           </div>
           {/* 右：預覽 + AI 對話 */}
@@ -655,7 +655,7 @@ export default function App() {
               <LivePreview code={currentCode} language={language} />
             </div>
             <div className="flex-[5] bg-gradient-to-br from-[#0f1019] to-[#0a0a10] border border-neutral-800 rounded-2xl overflow-hidden flex flex-col min-h-0">
-              <ChatPanel />
+              {chatPanelJSX}
             </div>
           </div>
         </div>
@@ -664,10 +664,10 @@ export default function App() {
         <div className="md:hidden flex-1 flex flex-col min-h-0">
           {/* Tab 內容區 */}
           <div className="flex-1 overflow-hidden bg-[#0f1019] border border-neutral-800 m-2 mb-0 rounded-2xl flex flex-col">
-            {mobileTab === "editor"  && <EditorPanel />}
+            {mobileTab === "editor"  && editorPanelJSX}
             {mobileTab === "preview" && <LivePreview code={currentCode} language={language} />}
-            {mobileTab === "chat"    && <ChatPanel />}
-            {mobileTab === "history" && <HistoryPanel />}
+            {mobileTab === "chat"    && chatPanelJSX}
+            {mobileTab === "history" && historyPanelJSX}
           </div>
 
           {/* 底部 Tab 導覽列 */}
