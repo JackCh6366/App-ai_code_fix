@@ -25,20 +25,20 @@ interface AIResult {
 
 // ─── Provider configs ─────────────────────────────────────────────────────────
 
+const NVIDIA_MAX_TOKENS = 16384;
+
 const PROVIDER_CONFIG: Record<Provider, { model: string; baseUrl?: string; noResponseFormat?: boolean }> = {
   gemini: {
     model: "gemini-3.1-flash-lite",
   },
   "nvidia-code": {
-    // Google Gemma 3 27B IT via NVIDIA NIM (stable hosted API)
-    // Does NOT support response_format:json_object — relies on system prompt JSON enforcement
-    model: "google/gemma-3-27b-it",
+    // Google Gemma 4 31B IT via NVIDIA NIM.
+    model: "google/gemma-4-31b-it",
     baseUrl: "https://integrate.api.nvidia.com/v1",
-    noResponseFormat: true,
   },
   nvidia: {
-    // Llama-3.3-Nemotron-Super-49B: NAS-optimized, best speed/quality for code & reasoning
-    model: "nvidia/llama-3.3-nemotron-super-49b-v1",
+    // Llama-3.3-Nemotron-Super-49B v1.5: newer stable endpoint.
+    model: "nvidia/llama-3.3-nemotron-super-49b-v1.5",
     baseUrl: "https://integrate.api.nvidia.com/v1",
   },
   meta: {
@@ -217,7 +217,7 @@ async function callOpenAICompat(body: RequestBody, provider: Exclude<Provider, "
     model: cfg.model,
     messages,
     temperature: 0.6,
-    max_tokens: 4096,
+    max_tokens: NVIDIA_MAX_TOKENS,
     ...(cfg.noResponseFormat ? {} : { response_format: { type: "json_object" } }),
   };
 

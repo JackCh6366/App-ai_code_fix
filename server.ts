@@ -20,10 +20,10 @@ type Provider = "gemini" | "nvidia-code" | "nvidia" | "meta";
 
 const PROVIDER_MODELS: Record<Provider, string> = {
   gemini: "gemini-3.1-flash-lite",
-  // NVIDIA Nemotron Ultra 550B: frontier-scale reasoning & agentic code model
-  "nvidia-code": "nvidia/nemotron-3-ultra-550b-a55b",
-  // Llama-3.3-Nemotron-Super-49B: NAS-optimized, best speed/quality for code & reasoning
-  nvidia: "nvidia/llama-3.3-nemotron-super-49b-v1",
+  // Google Gemma 4 31B IT via NVIDIA NIM.
+  "nvidia-code": "google/gemma-4-31b-it",
+  // Llama-3.3-Nemotron-Super-49B v1.5: newer stable endpoint.
+  nvidia: "nvidia/llama-3.3-nemotron-super-49b-v1.5",
   // Meta Llama 3.3 70B: strong general-purpose code & instruction model
   meta: "meta/llama-3.3-70b-instruct",
 };
@@ -143,7 +143,7 @@ app.post("/api/analyze", async (req, res) => {
         model,
         messages,
         temperature: 0.6,
-        max_tokens: 4096,
+        max_tokens: 16384,
         response_format: { type: "json_object" },
       }),
     });
