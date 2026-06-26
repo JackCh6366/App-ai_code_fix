@@ -30,8 +30,9 @@ const PROVIDER_CONFIG: Record<Provider, { model: string; baseUrl?: string; noRes
     model: "gemini-3.1-flash-lite",
   },
   "nvidia-code": {
-    // Google Gemma 4 31B IT via NVIDIA NIM (upgraded from Gemma 3n E4B)
+    // Google Gemma 4 31B IT via NVIDIA NIM
     // Does NOT support response_format:json_object — relies on system prompt JSON enforcement
+    // Note: This model is occasionally unavailable on NVIDIA hosted API (504 timeout is a known issue)
     model: "google/gemma-4-31b-it",
     baseUrl: "https://integrate.api.nvidia.com/v1",
     noResponseFormat: true,
@@ -88,13 +89,68 @@ ${prompt}`;
 }
 
 function parseJSONSafe(text: string): AIResult {
-  // Strip potential markdown fences
+  // Strip potential markdown fences and Gemma 4 thinking tags
   const cleaned = text
     .trim()
+    .replace(/<\|channel>thought[\s\S]*?<channel\|>/g, "") // strip Gemma 4 thinking blocks
     .replace(/^```(?:json)?\n?/, "")
     .replace(/\n?```$/, "")
     .trim();
   return JSON.parse(cleaned);
+}
+
+// ─── Retry helper ─────────────────────────────────────────────────────────────
+
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxAttempts: number = 3,
+  delayMs: number = 2000
+): Promise<T> {
+  let lastError: Error | null = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastError = err;
+      const isRetryable =
+        err.message?.includes("504") ||
+        err.message?.includes("502") ||
+        err.message?.includes("503") ||
+        err.message?.includes("timeout");
+      if (!isRetryable || attempt === maxAttempts) throw err;
+      await new Promise((res) => setTimeout(res, delayMs * attempt));
+    }
+  }
+  throw lastError;
+}
+
+// ─── Friendly error message ───────────────────────────────────────────────────
+
+function friendlyError(provider: Provider, err: any): string {
+  const msg: string = err.message || String(err);
+
+  if (msg.includes("504")) {
+    const modelName =
+      provider === "nvidia-code"
+        ? "Gemma 4 31B"
+        : provider === "nvidia"
+        ? "Nemotron Super 49B"
+        : provider === "meta"
+        ? "Meta Llama 3.3"
+        : provider;
+    return `${modelName} 伺服器目前忙碌或暫時無法使用（504 Timeout）。這是 NVIDIA NIM 免費 API 的已知限制，請稍後再試，或切換至其他 AI 模型。`;
+  }
+
+  if (msg.includes("401") || msg.includes("403")) {
+    const keyName = provider === "gemini" ? "GEMINI_API_KEY" : "NVIDIA_API_KEY";
+    return `API 驗證失敗，請確認您的 ${keyName} 是否正確設定。`;
+  }
+
+  if (msg.includes("429")) {
+    return `請求頻率超過上限（Rate Limit），請稍等片刻後再試。`;
+  }
+
+  return msg;
 }
 
 // ─── Gemini handler ───────────────────────────────────────────────────────────
@@ -152,15 +208,12 @@ async function callOpenAICompat(body: RequestBody, provider: Exclude<Provider, "
   const systemPrompt = buildSystemPrompt(title, prompt);
   const contextPrompt = buildContextPrompt(title, currentCode, prompt);
 
-  // Build messages array
   const messages: { role: string; content: string }[] = [
     { role: "system", content: systemPrompt },
     ...history.map((h) => ({ role: h.role === "user" ? "user" : "assistant", content: h.content })),
     { role: "user", content: contextPrompt },
   ];
 
-  // Build request body
-  // Gemma 4 on NIM does not support response_format:json_object — skip it and rely on system prompt
   const requestBody: Record<string, unknown> = {
     model: cfg.model,
     messages,
@@ -214,14 +267,16 @@ export default async function handler(req: any, res: any) {
     let result: AIResult;
 
     if (provider === "gemini") {
+      // Gemini 不需要 retry，失敗即回報
       result = await callGemini(body);
     } else {
-      result = await callOpenAICompat(body, provider);
+      // NVIDIA NIM 偶爾 504，自動重試最多 3 次，間隔 2s / 4s
+      result = await withRetry(() => callOpenAICompat(body, provider), 3, 2000);
     }
 
     return res.status(200).json(result);
   } catch (error: any) {
     console.error(`[analyze][${provider}] error:`, error);
-    return res.status(500).json({ error: error.message || "伺服器內部發生錯誤" });
+    return res.status(500).json({ error: friendlyError(provider, error) });
   }
 }
