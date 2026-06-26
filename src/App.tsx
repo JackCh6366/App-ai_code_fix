@@ -39,6 +39,11 @@ const AI_PROVIDERS: { value: AIProvider; label: string; model: string; color: st
   { value: "meta",        label: "Meta Llama 3.3",     model: "llama-3.3-70b-instruct",         color: "#0668E1", badge: "bg-indigo-900/60 text-indigo-300 border-indigo-800" },
 ];
 
+// ─── 根據 provider 取得對應的 API Key 名稱 ───────────────────────────────────
+function getApiKeyName(provider: AIProvider): string {
+  return provider === "gemini" ? "GEMINI_API_KEY" : "NVIDIA_API_KEY";
+}
+
 export default function App() {
   // 核心代碼狀態
   const [currentCode, setCurrentCode] = useState<string>(PRESET_FILES[0].code);
@@ -284,10 +289,14 @@ export default function App() {
 
     } catch (err: any) {
       console.error(err);
+
+      // ✅ 修正：根據當前選取的 provider 動態提示對應的 API Key 名稱
+      const apiKeyHint = getApiKeyName(selectedProvider);
+
       setChatHistory(prev => [...prev, {
         id: `err-${Date.now()}`,
         role: "system",
-        content: `抱歉，調整過程中發生了錯誤：${err.message || err}。請確認您的 GEMINI_API_KEY 已正確設定，且網路一切正常。`,
+        content: `抱歉，調整過程中發生了錯誤：${err.message || err}。請確認您的 ${apiKeyHint} 已正確設定，且網路一切正常。`,
         timestamp: new Date()
       }]);
     } finally {
@@ -328,6 +337,9 @@ export default function App() {
     { label: "📱 RWD 響應式優化", prompt: "請優化當前 HTML 的排版，讓它在手機版小螢幕與寬螢幕上都呈現完美置中的容器大小，同時加上舒適的內邊距(Padding)與精緻圓角" },
     { label: "💬 中文提示與註解", prompt: "請把這段寫好的程式碼內文所有的英文註釋或關鍵 UI 標籤更貼心地翻譯成繁體中文，且在程式細節處加上詳盡的中文關鍵註解描述" }
   ];
+
+  // ✅ 取得當前 provider 的顯示名稱
+  const currentProviderLabel = AI_PROVIDERS.find(p => p.value === selectedProvider)?.label ?? "AI";
 
   return (
     <div id="bento-container" className="flex flex-col min-h-screen w-full bg-[#07070a] text-neutral-300 font-sans p-2 md:p-3 gap-2 md:gap-3 overflow-x-hidden select-none">
@@ -487,7 +499,8 @@ export default function App() {
             <div className="p-3.5 bg-gradient-to-br from-[#121322] to-[#0d0d14] border border-indigo-950 rounded-xl space-y-2">
               <div className="flex items-center gap-1.5 text-xs text-indigo-400 font-bold">
                 <Flame className="w-4 h-4 text-amber-500 animate-bounce" />
-                <span>Gemini 3.5 智慧賦能</span>
+                {/* ✅ 修正：動態顯示當前選取的 AI 模型名稱，不再寫死 Gemini */}
+                <span>{currentProviderLabel} 智慧賦能</span>
               </div>
               <p className="text-[10px] text-neutral-400 leading-relaxed">
                 每次 AI 修改後均會**自動儲存原狀態為嶄新 Timeline 節點**。您可以自由點擊右側歷程還原任意時刻、甚至直接對照檢視修補細節。
