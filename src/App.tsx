@@ -546,13 +546,13 @@ export default function App() {
       </header>
 
       {/* ── 主體內容區 ── */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden min-h-0 flex flex-col">
 
         {/* ════ 桌機佈局（lg+）：三欄 Bento Grid ════ */}
-        <div className="hidden lg:grid lg:grid-cols-12 h-full gap-2 p-2">
+        <div className="hidden lg:flex flex-1 min-h-0 gap-2 p-2">
 
           {/* 左側欄：檔案管理 */}
-          <aside className="col-span-2 flex flex-col gap-2"
+          <aside className="w-[180px] shrink-0 flex flex-col gap-2 min-h-0"
             onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
             <div className={`flex-1 bg-[#0f1019] border rounded-2xl p-3 flex flex-col gap-3 transition-all ${dragOver ? "border-indigo-500 bg-indigo-950/20" : "border-neutral-800"}`}>
               <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-1.5">
@@ -609,7 +609,7 @@ export default function App() {
           </aside>
 
           {/* 中欄：編輯器（上）+ AI 對話（下）*/}
-          <div className="col-span-6 flex flex-col gap-2">
+          <div className="flex-1 flex flex-col gap-2 min-h-0">
             {/* 編輯器 */}
             <div className="flex-[5] bg-[#0f1019] border border-neutral-800 rounded-2xl overflow-hidden flex flex-col min-h-0">
               <EditorPanel />
@@ -621,7 +621,7 @@ export default function App() {
           </div>
 
           {/* 右欄：預覽（上）+ 版本歷史（下）*/}
-          <div className="col-span-4 flex flex-col gap-2">
+          <div className="w-[38%] shrink-0 flex flex-col gap-2 min-h-0">
             <div className="flex-[6] bg-[#0f1019] border border-neutral-800 rounded-2xl overflow-hidden flex flex-col min-h-0">
               <LivePreview code={currentCode} language={language} />
             </div>
@@ -632,9 +632,9 @@ export default function App() {
         </div>
 
         {/* ════ 平板佈局（md ~ lg）：2欄 ════ */}
-        <div className="hidden md:grid lg:hidden grid-cols-2 h-full gap-2 p-2">
+        <div className="hidden md:flex lg:hidden flex-1 min-h-0 gap-2 p-2">
           {/* 左：編輯器 */}
-          <div className="flex flex-col gap-2">
+          <div className="flex-1 flex flex-col gap-2 min-h-0">
             <div className="flex-[6] bg-[#0f1019] border border-neutral-800 rounded-2xl overflow-hidden flex flex-col min-h-0">
               <EditorPanel />
             </div>
@@ -643,7 +643,7 @@ export default function App() {
             </div>
           </div>
           {/* 右：預覽 + AI 對話 */}
-          <div className="flex flex-col gap-2">
+          <div className="flex-1 flex flex-col gap-2 min-h-0">
             <div className="flex-[5] bg-[#0f1019] border border-neutral-800 rounded-2xl overflow-hidden flex flex-col min-h-0">
               <LivePreview code={currentCode} language={language} />
             </div>
@@ -654,7 +654,7 @@ export default function App() {
         </div>
 
         {/* ════ 手機佈局（< md）：單欄，Tab 切換 ════ */}
-        <div className="md:hidden h-full flex flex-col">
+        <div className="md:hidden flex-1 flex flex-col min-h-0">
           {/* Tab 內容區 */}
           <div className="flex-1 overflow-hidden bg-[#0f1019] border border-neutral-800 m-2 mb-0 rounded-2xl flex flex-col">
             {mobileTab === "editor"  && <EditorPanel />}
