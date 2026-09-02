@@ -27,7 +27,7 @@ interface AIResult {
 
 const PROVIDER_CONFIG: Record<Provider, { model: string; baseUrl?: string; maxTokens?: number; noResponseFormat?: boolean }> = {
   gemini: {
-    model: "gemini-3.1-flash-lite",
+    model: "gemini-3.5-flash-lite",
   },
   meta: {
     // Meta Llama 3.3 70B Instruct: strong general-purpose code & instruction model

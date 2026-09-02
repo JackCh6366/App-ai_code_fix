@@ -19,7 +19,7 @@ app.use(express.urlencoded({ limit: "20mb", extended: true }));
 type Provider = "gemini" | "nvidia-code" | "nvidia" | "meta";
 
 const PROVIDER_MODELS: Record<Provider, string> = {
-  gemini: "gemini-3.1-flash-lite",
+  gemini: "gemini-3.5-flash-lite",
   // NVIDIA Nemotron 3 Nano 30B: fast non-China replacement for the retired Gemma 27B slot.
   "nvidia-code": "nvidia/nemotron-3-nano-30b-a3b",
   // Mistral Small 4: non-China coding/reasoning model that responds reliably in Vercel.

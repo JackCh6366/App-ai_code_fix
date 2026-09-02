@@ -28,7 +28,7 @@ import DiffView from "./components/DiffView";
 type AIProvider = "gemini" | "meta";
 
 const AI_PROVIDERS: { value: AIProvider; label: string; model: string; badge: string }[] = [
-  { value: "gemini", label: "Google Gemini", model: "gemini-3.1-flash-lite", badge: "bg-blue-900/60 text-blue-300 border-blue-800" },
+  { value: "gemini", label: "Google Gemini", model: "gemini-3.5-flash-lite", badge: "bg-blue-900/60 text-blue-300 border-blue-800" },
   { value: "meta",   label: "Meta Llama 3.3", model: "llama-3.3-70b-instruct", badge: "bg-indigo-900/60 text-indigo-300 border-indigo-800" },
 ];
 
